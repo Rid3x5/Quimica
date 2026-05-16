@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Química Proyecto</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 20px; }
+        h1 { color: #ff001ed4; }
+        .grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; max-width: 900px; margin: 20px auto; }
+        
+        .el-card { 
+            width: 90px; height: 110px; background: #2a2a2a; border: 2px solid #555; 
+            border-radius: 12px; cursor: pointer; transition: 0.3s;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        .el-card:hover { border-color: #ff0400; transform: scale(1.05); }
+        .el-card.active { background: #007e97; border-color: #cac8c8; transform: scale(1.1); box-shadow: 0 0 15px #dbdad6; z-index: 10; }
+        
+        /* Nuevas clases para compatibles e incompatibles */
+        .el-card.compatible { border-color: #b4b4b4; box-shadow: 0 0 10px rgba(163, 175, 76, 0.4); }
+        .el-card.incompatible { opacity: 0.2; pointer-events: none; filter: grayscale(100%); }
+
+        .simb { font-size: 28px; font-weight: bold; }
+        .val { font-size: 13px; color: #aaa; margin-top: 5px; }
+        
+        #pantalla { 
+            background: #1e1e1e; border: 2px solid #ff2600; border-radius: 15px;
+            padding: 30px; width: 90%; max-width: 700px; margin: 30px auto; min-height: 200px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+        }
+        .formula-grande { font-size: 4rem; color: #ff4000; margin: 15px 0; letter-spacing: 2px; }
+        .nombre-comp { font-size: 1.8rem; font-weight: bold; }
+        .badge { background: #333; padding: 5px 12px; border-radius: 20px; font-size: 14px; margin-bottom: 15px; display: inline-block; border: 1px solid #ff0000; }
+        
+        .explicacion { text-align: left; background: #2a2a2a; padding: 20px; border-radius: 10px; margin-top: 20px; font-size: 1.1rem; line-height: 1.6; border-left: 5px solid #00ffcc; }
+        .explicacion highlight { color: #ff0000; font-weight: bold; }
+        
+        button { padding: 12px 25px; cursor: pointer; background: #00ffcc; color: #000; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; transition: 0.2s; margin-top: 20px;}
+        button:hover { background: #00ccaa; }
+    </style>
+</head>
+<body>
+
+    <p>Eliga un elemento para combinar</p>
+    <h1>Proyecto de química</h1>
+
+    <div class="grid" id="grid"></div>
+
+    <div id="pantalla">
+        <div id="resultado" style="color: #3a919b; font-size: 1.2rem;">Toque un elemento para iniciar...</div>
+    </div>
+
+    <button onclick="location.reload()">Presione este boton para reiniciar el proceso</button>
+
+    <script>
+        const elementos = [
+        { s: "H", n: "Hidrógeno", en: 2.20, v: 1, ev: 1, t: "NM" },
+        { s: "Li", n: "Litio", en: 0.98, v: 1, ev: 1, t: "M" },
+        { s: "Na", n: "Sodio", en: 0.93, v: 1, ev: 1, t: "M" },
+        { s: "K", n: "Potasio", en: 0.82, v: 1, ev: 1, t: "M" },
+        { s: "Rb", n: "Rubidio", en: 0.82, v: 1, ev: 1, t: "M" },
+        { s: "Cs", n: "Cesio", en: 0.79, v: 1, ev: 1, t: "M" },
+        { s: "Be", n: "Berilio", en: 1.57, v: 2, ev: 2, t: "M" },
+        { s: "Mg", n: "Magnesio", en: 1.31, v: 2, ev: 2, t: "M" },
+        { s: "Ca", n: "Calcio", en: 1.00, v: 2, ev: 2, t: "M" },
+        { s: "Sr", n: "Estroncio", en: 0.95, v: 2, ev: 2, t: "M" },
+        { s: "Ba", n: "Bario", en: 0.89, v: 2, ev: 2, t: "M" },
+        { s: "B", n: "Boro", en: 2.04, v: 3, ev: 3, t: "NM" },
+        { s: "Al", n: "Aluminio", en: 1.61, v: 3, ev: 3, t: "M" },
+        { s: "C", n: "Carbono", en: 2.55, v: -4, ev: 4, t: "NM" },
+        { s: "Si", n: "Silicio", en: 1.90, v: -4, ev: 4, t: "NM" },
+        { s: "N", n: "Nitrógeno", en: 3.04, v: -3, ev: 5, t: "NM" },
+        { s: "P", n: "Fósforo", en: 2.19, v: -3, ev: 5, t: "NM" },
+        { s: "As", n: "Arsénico", en: 2.18, v: -3, ev: 5, t: "NM" },
+        { s: "O", n: "Oxígeno", en: 3.44, v: -2, ev: 6, t: "NM" },
+        { s: "S", n: "Azufre", en: 2.58, v: -2, ev: 6, t: "NM" },
+        { s: "Se", n: "Selenio", en: 2.55, v: -2, ev: 6, t: "NM" },
+        { s: "F", n: "Flúor", en: 3.98, v: -1, ev: 7, t: "NM" },
+        { s: "Cl", n: "Cloro", en: 3.16, v: -1, ev: 7, t: "NM" },
+        { s: "Br", n: "Bromo", en: 2.96, v: -1, ev: 7, t: "NM" },
+        { s: "I", n: "Yodo", en: 2.66, v: -1, ev: 7, t: "NM" }
+];
+
+
+
+
+        const nombres = { 
+            "Cl": "Cloruro", "F": "Fluoruro", "Br": "Bromuro", "I": "Yoduro",
+            "O": "Óxido", "S": "Sulfuro", "Se": "Seleniuro",
+            "N": "Nitruro", "P": "Fosfuro", "As": "Arseniuro",
+            "C": "Carburo", "Si": "Siliciuro",
+            "H": "Hidruro", "B": "Boruro"
+};
+
+
+
+        let seleccion = [];
+
+        function render() {
+            const container = document.getElementById('grid');
+            container.innerHTML = ''; // Limpiar antes de dibujar
+            elementos.forEach((el, index) => {
+                const div = document.createElement('div');
+                div.className = 'el-card';
+                div.id = `card-${index}`;
+                div.innerHTML = `<span class="simb">${el.s}</span><span class="val">${el.n}</span>`;
+                div.onclick = () => manejarSeleccion(el, index);
+                container.appendChild(div);
+});
+}
+
+        function manejarSeleccion(el, index) {
+
+            if (seleccion.length >= 2) return;
+
+            const cardSeleccionada = document.getElementById(`card-${index}`);
+            
+
+            if (seleccion.length === 0) {
+                seleccion.push(el);
+                cardSeleccionada.classList.add('active');
+                
+                document.getElementById('resultado').innerHTML = `Has seleccionado <b>${el.n}</b>. Ahora elige un elemento resaltado en verde para combinarlo.`;
+                
+
+                resaltarCompatibles(el, index);
+            } 
+
+            else if (seleccion.length === 1) {
+
+                seleccion.push(el);
+                cardSeleccionada.classList.add('active');
+                procesar();
+            }
+        }
+
+        function resaltarCompatibles(primerElemento, indicePrimerElemento) {
+            elementos.forEach((el, index) => {
+                const card = document.getElementById(`card-${index}`);
+
+
+            if (index === indicePrimerElemento) return;
+
+
+                if (primerElemento.t === "M" && el.t === "M") {
+                    card.classList.add('incompatible');
+                } else {
+
+                    card.classList.add('compatible');
+                }
+            });
+        }
+
+        function procesar() {
+            const [a, b] = seleccion;
+            const res = document.getElementById('resultado');
+
+
+            let cation = a.en < b.en ? a : b;
+            let anion = a.en < b.en ? b : a;
+
+
+            if (a.s === b.s) {
+                res.innerHTML = `
+                    <div class="badge">Molécula Diatómica ✅</div>
+                    <div class="nombre-comp">${a.n} gaseoso</div>
+                    <div class="formula-grande">${a.s}<sub>2</sub></div>
+                    <div class="explicacion">
+                        <p><b>1. Enlace Covalente Puro:</b><br>
+                        Como ambos átomos son idénticos (${a.n}), tienen la misma electronegatividad (<highlight>${a.en}</highlight>). La diferencia es 0, por lo que comparten sus electrones equitativamente formando una molécula diatómica, tal como lo indicó el profesor en clase.</p>
+                    </div>
+                `;
+                return;
+            }
+
+
+            let valC = Math.abs(cation.v);
+            let valA = Math.abs(anion.v);
+            
+            const mcd = (x, y) => y === 0 ? x : mcd(y, x % y);
+            let div = mcd(valC, valA);
+            
+            let subC = valA / div;
+            let subA = valC / div;
+
+            // Nombre y fórmula
+            let nombreFinal = `${nombres[anion.s] || anion.s} de ${cation.n}`;
+            let formula = `${cation.s}${subC > 1 ? `<sub>${subC}</sub>` : ""}${anion.s}${subA > 1 ? `<sub>${subA}</sub>` : ""}`;
+            
+            let diffEn = Math.abs(a.en - b.en).toFixed(2);
+            let tipoEnlace = diffEn >= 1.7 ? "Iónico" : "Covalente";
+
+            // Generar texto
+            let textoExplicativo = `
+                <div class="explicacion">
+                    <p><b>1. Análisis de Electronegatividad:</b><br>
+                    El <b>${cation.n}</b> tiene una electronegatividad de <highlight>${cation.en}</highlight> y el <b>${anion.n}</b> de <highlight>${anion.en}</highlight>. La diferencia es de <highlight>${diffEn}</highlight>, formando un enlace <b>${tipoEnlace}</b>. El ${anion.n} atrae los electrones y va a la derecha.</p>
+                    
+                    <p><b>2. Electrones y Valencias:</b><br>
+                    El ${cation.n} actúa con carga <highlight>${cation.v > 0 ? '+'+cation.v : cation.v}</highlight> (${cation.ev} e- de valencia). El ${anion.n} actúa con carga <highlight>${anion.v}</highlight> (${anion.ev} e- de valencia).</p>
+
+                    <p><b>3. Método de Cruce:</b><br>
+                    Se intercambian las valencias. Se requieren <highlight>${subC} átomo(s)</highlight> de ${cation.n} y <highlight>${subA} átomo(s)</highlight> de ${anion.n}.</p>
+                    
+                    <p><b>4. Comprobación de neutralidad:</b><br>
+                    (${subC} átomos × ${cation.v > 0 ? '+'+cation.v : cation.v}) + (${subA} átomos × ${anion.v}) = <b>(${subC * cation.v}) + (${subA * anion.v}) = 0</b>.</p>
+                </div>
+            `;
+
+            res.innerHTML = `
+                <div class="badge">Validado por Regla del Octeto ✅</div>
+                <div class="nombre-comp">${nombreFinal}</div>
+                <div class="formula-grande">${formula}</div>
+                ${textoExplicativo}
+            `;
+        }
+
+        render();
+    </script>
+</body>
+</html>
